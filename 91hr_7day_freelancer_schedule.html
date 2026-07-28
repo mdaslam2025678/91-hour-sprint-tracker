@@ -1,0 +1,113 @@
+
+<style>
+  h2.sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0); }
+  .day-card { background:var(--surface-1); border:0.5px solid var(--border); border-radius:12px; padding:1rem 1.25rem; margin-bottom:12px; }
+  .day-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .day-title { font-size:15px; font-weight:500; color:var(--text-primary); }
+  .day-hours { font-size:13px; color:var(--text-accent); font-weight:500; background:var(--bg-accent); padding:2px 10px; border-radius:20px; }
+  .task-row { display:flex; align-items:center; gap:10px; padding:5px 0; border-bottom:0.5px solid var(--border); }
+  .task-row:last-child { border-bottom:none; }
+  .task-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .task-name { font-size:13px; color:var(--text-primary); flex:1; }
+  .task-time { font-size:12px; color:var(--text-secondary); min-width:70px; text-align:right; }
+  .task-note { font-size:11px; color:var(--text-muted); flex:2; }
+  .legend { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+  .legend-item { display:flex; align-items:center; gap:5px; font-size:12px; color:var(--text-secondary); }
+  .legend-dot { width:8px; height:8px; border-radius:50%; }
+  .total-bar { background:var(--surface-2); border:0.5px solid var(--border-strong); border-radius:12px; padding:12px 1.25rem; margin-bottom:16px; display:flex; align-items:center; gap:16px; }
+  .total-num { font-size:22px; font-weight:500; color:var(--text-primary); }
+  .total-label { font-size:13px; color:var(--text-secondary); }
+  .bar-wrap { flex:1; height:8px; background:var(--surface-0); border-radius:4px; overflow:hidden; }
+  .bar-fill { height:100%; border-radius:4px; background:var(--fill-accent); }
+  .section-label { font-size:12px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; margin:18px 0 8px; }
+
+  .c-leads    { background:#185FA5; }
+  .c-fiverr   { background:#0F6E56; }
+  .c-trial    { background:#854F0B; }
+  .c-gigs     { background:#993556; }
+  .c-content  { background:#534AB7; }
+  .c-connects { background:#993C1D; }
+  .c-learn    { background:#444441; }
+</style>
+<h2 class="sr-only">7-day freelancer sprint schedule — 91 hours total across Upwork leads, Fiverr leads, trial videos, student gigs, content, and learning</h2>
+
+<div class="total-bar">
+  <div>
+    <div class="total-num">91 hrs</div>
+    <div class="total-label">over 7 days · ~13 hrs/day</div>
+  </div>
+  <div class="bar-wrap"><div class="bar-fill" style="width:100%"></div></div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot c-leads"></div>Upwork leads</div>
+  <div class="legend-item"><div class="legend-dot c-fiverr"></div>Fiverr leads</div>
+  <div class="legend-item"><div class="legend-dot c-trial"></div>Trial video</div>
+  <div class="legend-item"><div class="legend-dot c-gigs"></div>Student gigs</div>
+  <div class="legend-item"><div class="legend-dot c-content"></div>Content</div>
+  <div class="legend-item"><div class="legend-dot c-connects"></div>Upwork connects</div>
+  <div class="legend-item"><div class="legend-dot c-learn"></div>Learning</div>
+</div>
+
+<div id="days"></div>
+
+<script>
+const TASKS_BASE = [
+  { name:"Upwork leads (30 messages)", dot:"c-leads",    hrs:5.0,  note:"10 min/lead · use Google One for speed" },
+  { name:"Fiverr leads (30 messages)", dot:"c-fiverr",   hrs:3.75, note:"7–8 min/lead · analyze profile + message" },
+  { name:"Trial video (1 hr avg)",     dot:"c-trial",    hrs:1.0,  note:"Free 45–60s hook video for replies" },
+  { name:"Student gigs (3 per day)",   dot:"c-gigs",     hrs:1.1,  note:"3 × 22 min · use ready template on their device" },
+  { name:"Upwork connects (apply jobs)",dot:"c-connects",hrs:0.65, note:"Use your 100+ connects across the sprint" },
+  { name:"Learning",                   dot:"c-learn",    hrs:0.5,  note:"30 min daily skill sharpening" },
+];
+
+const days = [
+  { label:"Day 1", note:"Content creation day", tasks: [
+    ...TASKS_BASE.slice(0,5),
+    { name:"Content creation (2 hrs)",  dot:"c-content", hrs:2.0, note:"Batch create your content for the week" },
+    TASKS_BASE[5],
+  ]},
+  { label:"Day 2", note:"Content creation day", tasks: [
+    ...TASKS_BASE.slice(0,5),
+    { name:"Content creation (2 hrs)",  dot:"c-content", hrs:2.0, note:"Continue / finish content batch" },
+    TASKS_BASE[5],
+  ]},
+];
+for(let d=3; d<=7; d++) {
+  days.push({ label:`Day ${d}`, note:"Content upload day", tasks: [
+    ...TASKS_BASE.slice(0,5),
+    { name:"Daily content upload",      dot:"c-content", hrs:1.25, note:"Upload + caption · 1–1.5 hr" },
+    TASKS_BASE[5],
+  ]});
+}
+
+function fmt(h) {
+  const hrs = Math.floor(h);
+  const min = Math.round((h - hrs) * 60);
+  if(min === 0) return `${hrs}h`;
+  if(hrs === 0) return `${min}m`;
+  return `${hrs}h ${min}m`;
+}
+
+const container = document.getElementById('days');
+days.forEach(day => {
+  const total = day.tasks.reduce((s,t)=>s+t.hrs,0);
+  const card = document.createElement('div');
+  card.className = 'day-card';
+  card.innerHTML = `
+    <div class="day-header">
+      <div class="day-title">${day.label} <span style="font-weight:400;color:var(--text-secondary);font-size:13px;">— ${day.note}</span></div>
+      <div class="day-hours">${fmt(total)} total</div>
+    </div>
+    ${day.tasks.map(t=>`
+      <div class="task-row">
+        <div class="task-dot ${t.dot}"></div>
+        <div class="task-name">${t.name}</div>
+        <div class="task-note">${t.note}</div>
+        <div class="task-time">${fmt(t.hrs)}</div>
+      </div>
+    `).join('')}
+  `;
+  container.appendChild(card);
+});
+</script>
