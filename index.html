@@ -1,203 +1,961 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>91-Hour Sprint Dashboard</title>
-    <script src="https://jsdelivr.net"></script>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 20px; }
-        .container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        @media (max-width: 768px) { .container { grid-template-columns: 1fr; } }
-        .card { background: #1e293b; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        h1, h2 { margin-top: 0; color: #38bdf8; }
-        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
-        input, select, button { padding: 10px; border-radius: 6px; border: 1px solid #475569; background: #334155; color: white; font-size: 14px; }
-        button { background: #0284c7; cursor: pointer; border: none; font-weight: bold; }
-        button:hover { background: #0369a1; }
-        .task-item { display: flex; align-items: center; justify-content: space-between; padding: 10px; background: #334155; margin-bottom: 8px; border-radius: 6px; }
-        .task-item.completed { opacity: 0.6; text-decoration: line-through; border-left: 4px solid #10b981; }
-        .chart-box { max-height: 300px; margin-bottom: 20px; position: relative; }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; text-align: center; }
-        .stat-card { background: #334155; padding: 15px; border-radius: 8px; font-size: 24px; font-weight: bold; }
-        .stat-card span { display: block; font-size: 12px; color: #94a3b8; text-transform: uppercase; }
-        .btn-backend { background: #475569; margin-top: 10px; font-size: 12px; }
-        .btn-danger { background: #ef4444; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>91-Hour Sprint — Live Tracker &amp; Analytics Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg: #f7f1e2;
+    --bg-grain: #f3ead4;
+    --surface: #fffdf8;
+    --surface-soft: #fbf2d9;
+    --border: #e4d3a1;
+    --border-soft: #ecdfb8;
+    --gold: #c1932a;
+    --gold-deep: #8a6a1a;
+    --gold-bright: #e2ac3c;
+    --gold-line: linear-gradient(90deg, #a97d20, #e6b93d 50%, #a97d20);
+    --ink: #241c0f;
+    --ink-soft: #6e6142;
+    --ink-faint: #9c8f6c;
+    --success: #1e7a4c;
+    --success-soft: #e4f3ea;
+    --success-border: #bfe0cc;
+    --warning: #b8471e;
+    --warning-soft: #fbe9df;
+    --danger: #a3273a;
+    --danger-soft: #f7e3e6;
+    --shadow-gold: 0 10px 30px -12px rgba(138, 106, 26, 0.35);
+    --shadow-soft: 0 4px 18px -8px rgba(36, 28, 15, 0.18);
+    --radius-lg: 18px;
+    --radius-md: 12px;
+    --radius-sm: 8px;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html, body{
+    margin:0; padding:0;
+    background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(226,172,60,0.16), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(193,147,42,0.10), transparent 55%),
+      var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection{ background: var(--gold-bright); color: #241c0f; }
+
+  ::-webkit-scrollbar{ width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track{ background: var(--bg-grain); }
+  ::-webkit-scrollbar-thumb{ background: var(--border); border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover{ background: var(--gold); }
+
+  h1, h2, h3, .serif{ font-family: 'Playfair Display', Georgia, serif; }
+
+  a, button, input, select{ font-family: inherit; }
+
+  button:focus-visible, input:focus-visible, select:focus-visible{
+    outline: 3px solid var(--gold-bright);
+    outline-offset: 2px;
+  }
+
+  .wrap{
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+  }
+
+  /* ---------- HEADER ---------- */
+  .masthead{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap: 24px;
+    padding-bottom: 22px;
+    margin-bottom: 26px;
+    border-bottom: 2px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .masthead-eyebrow{
+    display:flex; align-items:center; gap:10px;
+    font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--gold-deep); font-weight: 700; margin-bottom: 6px;
+  }
+  .masthead-eyebrow .rule{ width: 28px; height: 2px; background: var(--gold); display:inline-block; }
+  .masthead h1{
+    font-size: clamp(28px, 4vw, 42px);
+    font-weight: 900;
+    margin: 0;
+    letter-spacing: -0.01em;
+    line-height: 1.05;
+  }
+  .masthead h1 span{ color: var(--gold-deep); }
+  .masthead p{
+    margin: 8px 0 0;
+    color: var(--ink-soft);
+    font-size: 14.5px;
+    max-width: 560px;
+  }
+  .masthead-clock{
+    text-align:right;
+    font-family:'Playfair Display', serif;
+  }
+  .masthead-clock .num{
+    font-size: 34px; font-weight: 900; color: var(--gold-deep); line-height:1;
+  }
+  .masthead-clock .lbl{
+    font-family:'Inter', sans-serif; font-size: 11px; letter-spacing:0.1em;
+    text-transform:uppercase; color: var(--ink-faint); font-weight:700;
+  }
+
+  /* ---------- METRICS ---------- */
+  .metrics{
+    display:grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .metric-card{
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    box-shadow: var(--shadow-soft);
+    position:relative;
+    overflow:hidden;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  }
+  .metric-card:hover{ transform: translateY(-2px); box-shadow: var(--shadow-gold); }
+  .metric-card::before{
+    content:"";
+    position:absolute; top:0; left:0; right:0; height:3px;
+    background: var(--gold-line);
+  }
+  .metric-label{
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.09em;
+    color: var(--ink-faint); font-weight: 700; margin-bottom: 6px;
+  }
+  .metric-value{
+    font-size: 30px; font-weight: 900; color: var(--ink); line-height:1.1;
+  }
+  .metric-value small{
+    font-size: 15px; color: var(--ink-faint); font-weight: 700;
+  }
+  .metric-sub{ font-size: 12.5px; color: var(--ink-soft); margin-top: 4px; }
+
+  /* Progress bar (goal card spans full width beneath) */
+  .goal-strip{
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-lg);
+    padding: 18px 22px;
+    margin-bottom: 26px;
+    box-shadow: var(--shadow-soft);
+  }
+  .goal-strip-top{
+    display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; flex-wrap:wrap; gap:8px;
+  }
+  .goal-strip-top .title{ font-family:'Playfair Display', serif; font-weight:800; font-size:17px; }
+  .goal-strip-top .pct{ font-family:'Playfair Display', serif; font-weight:900; font-size:20px; color: var(--gold-deep); }
+  .progress-track{
+    width:100%; height: 16px; border-radius: 999px;
+    background: var(--surface-soft);
+    border: 1px solid var(--border-soft);
+    overflow:hidden;
+    position:relative;
+  }
+  .progress-fill{
+    height:100%;
+    background: linear-gradient(90deg, #a97d20, #e6b93d, #f3cd6d);
+    border-radius: 999px;
+    width:0%;
+    transition: width 0.5s cubic-bezier(.4,0,.2,1);
+    position:relative;
+  }
+  .progress-fill::after{
+    content:"";
+    position:absolute; inset:0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+    animation: shimmer 2.6s infinite;
+  }
+  @keyframes shimmer{ 0%{transform:translateX(-100%);} 100%{transform:translateX(100%);} }
+
+  /* ---------- LAYOUT GRID ---------- */
+  .main-grid{
+    display:grid;
+    grid-template-columns: 1fr 1.15fr;
+    gap: 22px;
+    align-items:start;
+  }
+
+  .panel{
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-soft);
+    padding: 22px;
+    margin-bottom: 22px;
+  }
+  .panel-head{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed var(--border);
+  }
+  .panel-head h2{
+    font-size: 19px; font-weight: 800; margin:0;
+  }
+  .panel-head .tag{
+    font-size: 11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;
+    color: var(--gold-deep); background: var(--surface-soft); border:1px solid var(--border-soft);
+    padding: 4px 10px; border-radius: 999px;
+  }
+
+  /* ---------- FORM ---------- */
+  .form-row{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom: 14px; }
+  .field{ display:flex; flex-direction:column; gap:6px; flex:1; min-width: 110px; }
+  .field label{ font-size: 11px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color: var(--ink-faint); }
+  .field input, .field select{
+    padding: 11px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-grain);
+    color: var(--ink);
+    font-size: 14.5px;
+    font-weight: 600;
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  }
+  .field input::placeholder{ color: var(--ink-faint); font-weight: 500; }
+  .field input:focus, .field select:focus{
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(193,147,42,0.18);
+    outline:none;
+  }
+  .field.desc{ flex: 2.2; }
+
+  .btn{
+    border:none; cursor:pointer;
+    font-weight: 800; font-size: 14px;
+    padding: 11px 18px;
+    border-radius: var(--radius-sm);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, background 0.2s ease-in-out;
+    display:inline-flex; align-items:center; gap:8px;
+    letter-spacing: 0.01em;
+  }
+  .btn:active{ transform: translateY(1px) scale(0.99); }
+  .btn-gold{
+    background: linear-gradient(180deg, #d9a939, #b1841f);
+    color: #241c0f;
+    box-shadow: 0 6px 16px -6px rgba(138,106,26,0.55);
+  }
+  .btn-gold:hover{ box-shadow: 0 8px 22px -6px rgba(138,106,26,0.7); transform: translateY(-1px); }
+  .btn-ghost{
+    background: var(--surface-soft);
+    color: var(--ink);
+    border: 1.5px solid var(--border-soft);
+  }
+  .btn-ghost:hover{ border-color: var(--gold); color: var(--gold-deep); }
+  .btn-danger{
+    background: var(--danger-soft);
+    color: var(--danger);
+    border: 1.5px solid #eac5cb;
+  }
+  .btn-danger:hover{ background: var(--danger); color: #fff; }
+  .btn-block{ width:100%; justify-content:center; }
+  .btn-sm{ padding: 7px 12px; font-size: 12.5px; }
+
+  /* ---------- TASK LIST ---------- */
+  .task-list{
+    list-style:none; margin:0; padding:0;
+    display:flex; flex-direction:column; gap:10px;
+    max-height: 460px; overflow-y:auto; padding-right: 4px;
+  }
+  .task-item{
+    display:flex; align-items:center; gap:12px;
+    background: var(--bg-grain);
+    border: 1.5px solid var(--border-soft);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    transition: all 0.2s ease-in-out;
+  }
+  .task-item.done{
+    background: var(--success-soft);
+    border-color: var(--success-border);
+  }
+  .task-checkbox{
+    width: 22px; height: 22px; flex-shrink:0;
+    accent-color: var(--success);
+    cursor:pointer;
+  }
+  .task-day{
+    font-family:'Playfair Display', serif;
+    font-weight: 800; font-size: 12.5px;
+    color: #fff;
+    background: linear-gradient(180deg, #d9a939, #a1791f);
+    padding: 4px 10px;
+    border-radius: 999px;
+    flex-shrink:0;
+    box-shadow: 0 2px 6px -2px rgba(138,106,26,0.6);
+    white-space:nowrap;
+  }
+  .task-desc{
+    flex:1; font-size: 14.5px; font-weight: 600; color: var(--ink);
+    min-width: 0; overflow-wrap:anywhere;
+    transition: color 0.2s ease-in-out;
+  }
+  .task-item.done .task-desc{
+    text-decoration: line-through;
+    text-decoration-color: var(--success);
+    text-decoration-thickness: 2px;
+    color: var(--ink-soft);
+  }
+  .task-hours{
+    font-family:'Playfair Display', serif;
+    font-weight: 800; font-size: 13px;
+    color: var(--gold-deep);
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 999px;
+    flex-shrink:0;
+    white-space:nowrap;
+  }
+  .task-item.done .task-hours{
+    color: var(--success);
+    border-color: var(--success-border);
+  }
+  .task-del{
+    background: transparent; border:none; cursor:pointer;
+    color: var(--ink-faint);
+    font-size: 17px; font-weight: 700;
+    width:28px; height:28px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+    transition: all 0.2s ease-in-out;
+  }
+  .task-del:hover{ background: var(--danger); color:#fff; }
+
+  .empty-state{
+    text-align:center; padding: 34px 10px; color: var(--ink-faint);
+  }
+  .empty-state .glyph{ font-size: 30px; margin-bottom:8px; }
+  .empty-state p{ margin:0; font-size:13.5px; font-weight:600; }
+
+  /* ---------- CHARTS ---------- */
+  .chart-box{ position:relative; height: 240px; }
+  .chart-box.tall{ height: 280px; }
+  .day-select-inline{
+    display:flex; align-items:center; gap:8px;
+  }
+  .day-select-inline select{
+    padding: 6px 10px; border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border); background: var(--bg-grain);
+    font-weight:700; font-size: 13px; color: var(--ink); cursor:pointer;
+  }
+
+  /* ---------- BACKUP PANEL ---------- */
+  .backup-grid{ display:grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .backup-note{
+    font-size: 12px; color: var(--ink-faint); margin-top: 12px; line-height:1.5;
+    border-top: 1px dashed var(--border); padding-top: 12px;
+  }
+
+  .toast{
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--ink); color: #f7f1e2;
+    padding: 12px 20px; border-radius: 999px;
+    font-size: 13.5px; font-weight: 700;
+    box-shadow: 0 12px 30px -10px rgba(0,0,0,0.5);
+    opacity:0; pointer-events:none;
+    transition: all 0.3s ease-in-out;
+    z-index: 999;
+    display:flex; align-items:center; gap:8px;
+  }
+  .toast.show{ opacity:1; transform: translateX(-50%) translateY(0); pointer-events:auto; }
+  .toast .dot{ width:8px; height:8px; border-radius:50%; background: var(--gold-bright); }
+
+  footer{
+    text-align:center; margin-top: 30px; color: var(--ink-faint); font-size: 12px;
+  }
+
+  @media (max-width: 900px){
+    .main-grid{ grid-template-columns: 1fr; }
+    .metrics{ grid-template-columns: repeat(2, 1fr); }
+    .backup-grid{ grid-template-columns: 1fr; }
+    .masthead{ flex-direction:column; align-items:flex-start; }
+    .masthead-clock{ text-align:left; }
+  }
+  @media (max-width: 520px){
+    .metrics{ grid-template-columns: 1fr; }
+    .form-row{ flex-direction:column; }
+    .field{ width:100%; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation: none !important; transition: none !important; }
+  }
+</style>
 </head>
 <body>
 
-    <div style="text-align: center; margin-bottom: 20px;">
-        <h1>🚀 91-Hour Sprint Open-Source Live Tracker</h1>
-        <p>Connected via GitHub & Netlify</p>
+<div class="wrap">
+
+  <header class="masthead">
+    <div>
+      <div class="masthead-eyebrow"><span class="rule"></span> Sprint Ledger · Live</div>
+      <h1>91-Hour Sprint <span>Tracker &amp; Analytics</span></h1>
+      <p>A gilded ledger for the seven-day push. Log honest hours, tick what's truly finished, and watch the parchment fill toward ninety-one.</p>
+    </div>
+    <div class="masthead-clock">
+      <div class="num" id="headerTotal">0.0</div>
+      <div class="lbl">Hours Logged / 91</div>
+    </div>
+  </header>
+
+  <!-- METRICS -->
+  <section class="metrics">
+    <div class="metric-card">
+      <div class="metric-label">Total Logged Hours</div>
+      <div class="metric-value"><span id="metricTotal">0.0</span><small> / 91</small></div>
+      <div class="metric-sub" id="metricTotalSub">0 tasks completed</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Completion</div>
+      <div class="metric-value"><span id="metricPct">0</span><small>%</small></div>
+      <div class="metric-sub">of the 91-hour finish line</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Hours Remaining</div>
+      <div class="metric-value" id="metricRemaining">91.0</div>
+      <div class="metric-sub">to reach the goal</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Active Days</div>
+      <div class="metric-value"><span id="metricDays">0</span><small> / 7</small></div>
+      <div class="metric-sub">days with logged work</div>
+    </div>
+  </section>
+
+  <!-- GOAL STRIP -->
+  <section class="goal-strip">
+    <div class="goal-strip-top">
+      <div class="title">Path to 91 Hours</div>
+      <div class="pct"><span id="goalPct">0</span>% complete</div>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </section>
+
+  <!-- MAIN GRID -->
+  <div class="main-grid">
+
+    <!-- LEFT: FORM + LIST -->
+    <div>
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Log a Task</h2>
+          <span class="tag">Manual Entry</span>
+        </div>
+        <div class="form-row">
+          <div class="field" style="max-width:110px;">
+            <label for="dayInput">Day</label>
+            <select id="dayInput">
+              <option value="1">Day 1</option>
+              <option value="2">Day 2</option>
+              <option value="3">Day 3</option>
+              <option value="4">Day 4</option>
+              <option value="5">Day 5</option>
+              <option value="6">Day 6</option>
+              <option value="7">Day 7</option>
+            </select>
+          </div>
+          <div class="field desc">
+            <label for="taskDesc">Task Description</label>
+            <input type="text" id="taskDesc" placeholder="e.g. Build auth flow" maxlength="120">
+          </div>
+          <div class="field" style="max-width:120px;">
+            <label for="taskHours">Hours</label>
+            <input type="number" id="taskHours" placeholder="1.5" step="0.5" min="0" max="24">
+          </div>
+        </div>
+        <button class="btn btn-gold btn-block" id="addTaskBtn">＋ Add Task</button>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Task Ledger</h2>
+          <span class="tag" id="taskCountTag">0 tasks</span>
+        </div>
+        <ul class="task-list" id="taskList"></ul>
+      </div>
     </div>
 
-    <div class="container">
-        <!-- LEFT COLUMN: INPUTS & TASKS -->
-        <div class="card">
-            <h2>📝 Manual Logging</h2>
-            
-            <div class="input-group">
-                <select id="daySelect">
-                    <option value="0">Day 1 (Today)</option>
-                    <option value="1">Day 2</option>
-                    <option value="2">Day 3</option>
-                    <option value="3">Day 4</option>
-                    <option value="4">Day 5</option>
-                    <option value="5">Day 6</option>
-                    <option value="6">Day 7</option>
-                </select>
-                <input type="text" id="taskName" placeholder="Task description..." style="flex-grow: 1;">
-                <input type="number" id="taskHours" placeholder="Hours" style="width: 70px;" min="0" step="0.5">
-                <button onclick="addTask()">Add Task</button>
-            </div>
-
-            <h2>📋 Task Checklist</h2>
-            <div id="taskList"></div>
-            
-            <hr style="border-color: #334155; margin: 20px 0;">
-            <h3>💾 Manual File Storage (Backup/Restore)</h3>
-            <button class="btn-backend" onclick="exportData()">⬇️ Download Backup File</button>
-            <input type="file" id="importFile" style="display:none" onchange="importData(this)">
-            <button class="btn-backend" onclick="document.getElementById('importFile').click()">⬆️ Upload Backup File</button>
-            <button class="btn-backend btn-danger" onclick="resetSprint()">⚠️ Clear All Data</button>
+    <!-- RIGHT: CHARTS -->
+    <div>
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Daily Balance</h2>
+          <div class="day-select-inline">
+            <label for="viewDaySelect" style="font-size:11px;font-weight:700;color:var(--ink-faint);text-transform:uppercase;">View</label>
+            <select id="viewDaySelect">
+              <option value="1">Day 1</option>
+              <option value="2">Day 2</option>
+              <option value="3">Day 3</option>
+              <option value="4">Day 4</option>
+              <option value="5">Day 5</option>
+              <option value="6">Day 6</option>
+              <option value="7">Day 7</option>
+            </select>
+          </div>
         </div>
+        <div class="chart-box"><canvas id="dailyPieChart"></canvas></div>
+      </div>
 
-        <!-- RIGHT COLUMN: LIVE ANALYTICS -->
-        <div class="card">
-            <h2>📊 Live Analytics</h2>
-            
-            <div class="stats-grid">
-                <div class="stat-card"><span id="totalLogged">0 / 91</span>Total Hours Done</div>
-                <div class="stat-card"><span id="weeklyProgress">0%</span>Sprint Success</div>
-            </div>
-
-            <h3>🕒 Day's Balance (Work vs Rest)</h3>
-            <div class="chart-box">
-                <canvas id="dayPieChart"></canvas>
-            </div>
-
-            <h3>📈 7-Day Success Trend (Hours Per Day)</h3>
-            <div class="chart-box">
-                <canvas id="weekLineChart"></canvas>
-            </div>
+      <div class="panel">
+        <div class="panel-head">
+          <h2>7-Day Performance</h2>
+          <span class="tag">Hours Worked</span>
         </div>
+        <div class="chart-box tall"><canvas id="weekLineChart"></canvas></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Backup &amp; Restore</h2>
+          <span class="tag">Local-First</span>
+        </div>
+        <div class="backup-grid">
+          <button class="btn btn-ghost" id="downloadBtn">⬇ Download JSON</button>
+          <button class="btn btn-ghost" id="uploadTriggerBtn">⬆ Upload JSON</button>
+          <button class="btn btn-danger" id="nukeBtn">☠ Nuke Everything</button>
+        </div>
+        <input type="file" id="uploadInput" accept="application/json" style="display:none;">
+        <p class="backup-note">Every change auto-saves to your browser's local storage. Download a timestamped JSON snapshot any time, or restore one to repopulate the ledger and every chart instantly.</p>
+      </div>
     </div>
 
-    <script>
-        let sprintData = JSON.parse(localStorage.getItem('sprintData')) || {
-            tasks: [],
-            dailyTotals: [0, 0, 0, 0, 0, 0, 0]
+  </div>
+
+  <footer>Local-first · No server · Your data never leaves this browser unless you download it.</footer>
+</div>
+
+<div class="toast" id="toast"><span class="dot"></span><span id="toastMsg">Saved</span></div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---------------- STATE ----------------
+  const STORAGE_KEY = 'sprint91_state_v1';
+  const GOAL_HOURS = 91;
+  const DAY_CYCLE = 24;
+
+  /** @type {{tasks: Array<{id:string, day:number, desc:string, hours:number, done:boolean}>, viewDay:number}} */
+  let state = {
+    tasks: [],
+    viewDay: 1
+  };
+
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+  // ---------------- DOM REFS ----------------
+  const dayInput        = document.getElementById('dayInput');
+  const taskDescInput   = document.getElementById('taskDesc');
+  const taskHoursInput  = document.getElementById('taskHours');
+  const addTaskBtn      = document.getElementById('addTaskBtn');
+  const taskListEl      = document.getElementById('taskList');
+  const taskCountTag    = document.getElementById('taskCountTag');
+  const viewDaySelect   = document.getElementById('viewDaySelect');
+
+  const headerTotal     = document.getElementById('headerTotal');
+  const metricTotal     = document.getElementById('metricTotal');
+  const metricTotalSub  = document.getElementById('metricTotalSub');
+  const metricPct       = document.getElementById('metricPct');
+  const metricRemaining = document.getElementById('metricRemaining');
+  const metricDays      = document.getElementById('metricDays');
+  const goalPct         = document.getElementById('goalPct');
+  const progressFill    = document.getElementById('progressFill');
+
+  const downloadBtn     = document.getElementById('downloadBtn');
+  const uploadTriggerBtn= document.getElementById('uploadTriggerBtn');
+  const uploadInput     = document.getElementById('uploadInput');
+  const nukeBtn         = document.getElementById('nukeBtn');
+
+  const toastEl         = document.getElementById('toast');
+  const toastMsg        = document.getElementById('toastMsg');
+
+  let toastTimer = null;
+  function showToast(msg){
+    toastMsg.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2200);
+  }
+
+  // ---------------- PERSISTENCE ----------------
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return;
+      const parsed = JSON.parse(raw);
+      if(parsed && Array.isArray(parsed.tasks)){
+        state.tasks = parsed.tasks.filter(t =>
+          t && typeof t.id === 'string' &&
+          Number.isInteger(t.day) && t.day >= 1 && t.day <= 7 &&
+          typeof t.desc === 'string' &&
+          typeof t.hours === 'number' &&
+          typeof t.done === 'boolean'
+        );
+        state.viewDay = Number.isInteger(parsed.viewDay) ? parsed.viewDay : 1;
+      }
+    }catch(e){
+      console.error('Failed to load saved state:', e);
+    }
+  }
+
+  function saveState(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }catch(e){
+      console.error('Failed to save state:', e);
+      showToast('⚠ Could not save — storage full?');
+    }
+  }
+
+  // ---------------- DERIVED DATA ----------------
+  function totalLoggedHours(){
+    return state.tasks.reduce((sum, t) => sum + (t.done ? t.hours : 0), 0);
+  }
+
+  function hoursForDay(day){
+    return state.tasks
+      .filter(t => t.day === day && t.done)
+      .reduce((sum, t) => sum + t.hours, 0);
+  }
+
+  function activeDaysCount(){
+    const set = new Set(state.tasks.filter(t => t.done && t.hours > 0).map(t => t.day));
+    return set.size;
+  }
+
+  // ---------------- ACTIONS ----------------
+  function addTask(){
+    const day = parseInt(dayInput.value, 10);
+    const desc = taskDescInput.value.trim();
+    const hours = parseFloat(taskHoursInput.value);
+
+    if(!desc){
+      taskDescInput.focus();
+      showToast('✎ Give the task a description');
+      return;
+    }
+    if(isNaN(hours) || hours <= 0){
+      taskHoursInput.focus();
+      showToast('⏱ Enter a valid number of hours');
+      return;
+    }
+
+    state.tasks.push({ id: uid(), day, desc, hours: Math.round(hours * 100) / 100, done: false });
+    taskDescInput.value = '';
+    taskHoursInput.value = '';
+    taskDescInput.focus();
+
+    saveState();
+    renderAll();
+    showToast('Task added to the ledger');
+  }
+
+  function toggleTask(id){
+    const task = state.tasks.find(t => t.id === id);
+    if(!task) return;
+    task.done = !task.done;
+    saveState();
+    renderAll();
+    showToast(task.done ? '✓ Marked complete' : 'Marked incomplete');
+  }
+
+  function deleteTask(id){
+    state.tasks = state.tasks.filter(t => t.id !== id);
+    saveState();
+    renderAll();
+    showToast('Task removed');
+  }
+
+  function nukeEverything(){
+    const first = window.confirm('This will permanently erase every logged task from this browser. Continue?');
+    if(!first) return;
+    const second = window.confirm('Final confirmation: wipe the entire 91-hour ledger now?');
+    if(!second) return;
+
+    state = { tasks: [], viewDay: 1 };
+    localStorage.removeItem(STORAGE_KEY);
+    viewDaySelect.value = '1';
+    dayInput.value = '1';
+    renderAll();
+    showToast('☠ Ledger wiped clean');
+  }
+
+  function downloadBackup(){
+    const payload = JSON.stringify(state, null, 2);
+    const blob = new Blob([payload], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const ts = new Date().toISOString().replace(/[:.]/g, '-');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sprint91-backup-${ts}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('⬇ Backup downloaded');
+  }
+
+  function uploadBackup(file){
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try{
+        const parsed = JSON.parse(e.target.result);
+        if(!parsed || !Array.isArray(parsed.tasks)){
+          throw new Error('Invalid backup structure');
+        }
+        const cleanTasks = parsed.tasks.filter(t =>
+          t && typeof t.desc === 'string' &&
+          Number.isFinite(t.hours) &&
+          Number.isInteger(t.day) && t.day >= 1 && t.day <= 7
+        ).map(t => ({
+          id: typeof t.id === 'string' ? t.id : uid(),
+          day: t.day,
+          desc: t.desc,
+          hours: Math.round(Number(t.hours) * 100) / 100,
+          done: Boolean(t.done)
+        }));
+
+        state = {
+          tasks: cleanTasks,
+          viewDay: Number.isInteger(parsed.viewDay) ? parsed.viewDay : 1
         };
+        viewDaySelect.value = String(state.viewDay);
+        saveState();
+        renderAll();
+        showToast('⬆ Backup restored successfully');
+      }catch(err){
+        console.error('Restore failed:', err);
+        showToast('⚠ Invalid or corrupted backup file');
+      }
+    };
+    reader.onerror = () => showToast('⚠ Could not read that file');
+    reader.readAsText(file);
+  }
 
-        const ctxPie = document.getElementById('dayPieChart').getContext('2d');
-        const dayPieChart = new Chart(ctxPie, {
-            type: 'pie',
-            data: {
-                labels: ['Completed Work', 'Remaining Day'],
-                datasets: [{ data:, backgroundColor: ['#10b981', '#334155'], borderWidth: 0 }]
-            },
-            options: { responsive: true, maintainAspectRatio: false }
-        });
+  // ---------------- RENDER: TASK LIST ----------------
+  function renderTaskList(){
+    const sorted = [...state.tasks].sort((a, b) => a.day - b.day);
+    taskCountTag.textContent = `${state.tasks.length} task${state.tasks.length === 1 ? '' : 's'}`;
 
-        const ctxLine = document.getElementById('weekLineChart').getContext('2d');
-        const weekLineChart = new Chart(ctxLine, {
-            type: 'line',
-            data: {
-                labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'],
-                datasets: [{ label: 'Hours Worked', data: sprintData.dailyTotals, borderColor: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.1)', fill: true, tension: 0.3 }]
-            },
-            options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 24, grid: { color: '#334155' } }, x: { grid: { color: '#334155' } } } }
-        });
+    if(sorted.length === 0){
+      taskListEl.innerHTML = `
+        <li class="empty-state" style="list-style:none;">
+          <div class="glyph">📜</div>
+          <p>The ledger is empty. Log your first task above.</p>
+        </li>`;
+      return;
+    }
 
-        function addTask() {
-            const day = parseInt(document.getElementById('daySelect').value);
-            const name = document.getElementById('taskName').value.trim();
-            const hours = parseFloat(document.getElementById('taskHours').value);
-            if (!name || isNaN(hours) || hours <= 0) return alert('Please enter valid task details!');
-            sprintData.tasks.push({ id: Date.now(), day, name, hours, completed: false });
-            document.getElementById('taskName').value = '';
-            document.getElementById('taskHours').value = '';
-            saveAndRender();
+    taskListEl.innerHTML = sorted.map(t => `
+      <li class="task-item ${t.done ? 'done' : ''}" data-id="${t.id}">
+        <input type="checkbox" class="task-checkbox" ${t.done ? 'checked' : ''} aria-label="Mark task complete">
+        <span class="task-day">Day ${t.day}</span>
+        <span class="task-desc">${escapeHtml(t.desc)}</span>
+        <span class="task-hours">${t.hours}h</span>
+        <button class="task-del" aria-label="Delete task" title="Delete task">×</button>
+      </li>
+    `).join('');
+
+    taskListEl.querySelectorAll('.task-item').forEach(li => {
+      const id = li.getAttribute('data-id');
+      li.querySelector('.task-checkbox').addEventListener('change', () => toggleTask(id));
+      li.querySelector('.task-del').addEventListener('click', () => deleteTask(id));
+    });
+  }
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // ---------------- RENDER: METRICS ----------------
+  function renderMetrics(){
+    const total = totalLoggedHours();
+    const pct = Math.min(100, Math.round((total / GOAL_HOURS) * 1000) / 10);
+    const remaining = Math.max(0, Math.round((GOAL_HOURS - total) * 100) / 100);
+    const doneCount = state.tasks.filter(t => t.done).length;
+
+    headerTotal.textContent = total.toFixed(1);
+    metricTotal.textContent = total.toFixed(1);
+    metricTotalSub.textContent = `${doneCount} task${doneCount === 1 ? '' : 's'} completed`;
+    metricPct.textContent = pct.toFixed(pct % 1 === 0 ? 0 : 1);
+    metricRemaining.textContent = remaining.toFixed(1);
+    metricDays.textContent = activeDaysCount();
+    goalPct.textContent = pct.toFixed(pct % 1 === 0 ? 0 : 1);
+    progressFill.style.width = `${Math.min(100, pct)}%`;
+  }
+
+  // ---------------- CHARTS ----------------
+  Chart.defaults.font.family = "'Inter', sans-serif";
+  Chart.defaults.color = '#6e6142';
+
+  const pieCtx = document.getElementById('dailyPieChart').getContext('2d');
+  const pieChart = new Chart(pieCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Completed', 'Remaining'],
+      datasets: [{
+        data: [0, DAY_CYCLE],
+        backgroundColor: ['#c1932a', '#f3ead4'],
+        borderColor: '#fffdf8',
+        borderWidth: 4,
+        hoverOffset: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '70%',
+      animation: { duration: 700, easing: 'easeInOutQuart' },
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { font: { family: "'Inter', sans-serif", weight: '600', size: 12 }, color: '#241c0f', padding: 16, usePointStyle: true, pointStyle: 'circle' }
+        },
+        tooltip: {
+          backgroundColor: '#241c0f',
+          titleFont: { family: "'Playfair Display', serif", weight: '700' },
+          bodyFont: { family: "'Inter', sans-serif" },
+          padding: 10,
+          cornerRadius: 8,
+          callbacks: {
+            label: (ctx) => ` ${ctx.label}: ${ctx.parsed.toFixed(1)}h`
+          }
         }
+      }
+    }
+  });
 
-        function toggleTask(id) {
-            const task = sprintData.tasks.find(t => t.id === id);
-            if (task) { task.completed = !task.completed; saveAndRender(); }
+  const lineCtx = document.getElementById('weekLineChart').getContext('2d');
+  const lineGradient = lineCtx.createLinearGradient(0, 0, 0, 280);
+  lineGradient.addColorStop(0, 'rgba(193,147,42,0.35)');
+  lineGradient.addColorStop(1, 'rgba(193,147,42,0.02)');
+
+  const lineChart = new Chart(lineCtx, {
+    type: 'line',
+    data: {
+      labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'],
+      datasets: [{
+        label: 'Hours Worked',
+        data: [0, 0, 0, 0, 0, 0, 0],
+        borderColor: '#a97d20',
+        backgroundColor: lineGradient,
+        pointBackgroundColor: '#c1932a',
+        pointBorderColor: '#fffdf8',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        borderWidth: 3,
+        tension: 0.45,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 650, easing: 'easeInOutQuart' },
+      scales: {
+        y: {
+          min: 0,
+          max: 24,
+          ticks: { stepSize: 4, color: '#6e6142', font: { size: 11.5, weight: '600' } },
+          grid: { color: '#ecdfb8' }
+        },
+        x: {
+          ticks: { color: '#6e6142', font: { size: 11.5, weight: '700' } },
+          grid: { display: false }
         }
-
-        function deleteTask(id) {
-            sprintData.tasks = sprintData.tasks.filter(t => t.id !== id);
-            saveAndRender();
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#241c0f',
+          titleFont: { family: "'Playfair Display', serif", weight: '700' },
+          bodyFont: { family: "'Inter', sans-serif" },
+          padding: 10,
+          cornerRadius: 8,
+          callbacks: {
+            label: (ctx) => ` ${ctx.parsed.y.toFixed(1)}h worked`
+          }
         }
+      }
+    }
+  });
 
-        function exportData() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(sprintData));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", "91_hour_sprint_backup.json");
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
-        }
+  function updatePieChart(){
+    const day = state.viewDay;
+    const completed = Math.min(DAY_CYCLE, hoursForDay(day));
+    const remaining = Math.max(0, DAY_CYCLE - completed);
+    pieChart.data.datasets[0].data = [Math.round(completed * 100) / 100, Math.round(remaining * 100) / 100];
+    pieChart.update();
+  }
 
-        function importData(input) {
-            const file = input.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    sprintData = JSON.parse(e.target.result);
-                    saveAndRender();
-                    alert("Backup restored successfully!");
-                } catch(err) { alert("Invalid backup file format!"); }
-            };
-            reader.readAsText(file);
-        }
+  function updateLineChart(){
+    lineChart.data.datasets[0].data = [1,2,3,4,5,6,7].map(d => Math.round(hoursForDay(d) * 100) / 100);
+    lineChart.update();
+  }
 
-        function resetSprint() {
-            if (confirm("Are you sure you want to clear your entire log data?")) {
-                sprintData = { tasks: [], dailyTotals: [0, 0, 0, 0, 0, 0, 0] };
-                saveAndRender();
-            }
-        }
+  // ---------------- MASTER RENDER ----------------
+  function renderAll(){
+    renderTaskList();
+    renderMetrics();
+    updatePieChart();
+    updateLineChart();
+  }
 
-        function saveAndRender() {
-            localStorage.setItem('sprintData', JSON.stringify(sprintData));
-            sprintData.dailyTotals =;
-            let totalHours = 0;
-            const taskList = document.getElementById('taskList');
-            taskList.innerHTML = '';
+  // ---------------- EVENTS ----------------
+  addTaskBtn.addEventListener('click', addTask);
+  [taskDescInput, taskHoursInput].forEach(el => {
+    el.addEventListener('keydown', (e) => { if(e.key === 'Enter') addTask(); });
+  });
 
-            sprintData.tasks.forEach(task => {
-                if (task.completed) {
-                    sprintData.dailyTotals[task.day] += task.hours;
-                    totalHours += task.hours;
-                }
-                const item = document.createElement('div');
-                item.className = `task-item ${task.completed ? 'completed' : ''}`;
-                item.innerHTML = `
-                    <div>
-                        <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask(${task.id})">
-                        <strong style="color: #67e8f9;">[D${task.day + 1}]</strong> ${task.name} (${task.hours}h)
-                    </div>
-                    <button onclick="deleteTask(${task.id})" style="background: #ef4444; padding: 4px 8px; font-size: 11px;">X</button>
-                `;
-                taskList.appendChild(item);
-            });
+  viewDaySelect.addEventListener('change', () => {
+    state.viewDay = parseInt(viewDaySelect.value, 10);
+    saveState();
+    updatePieChart();
+  });
 
-            document.getElementById('totalLogged').innerText = `${totalHours.toFixed(1)} / 91`;
-            document.getElementById('weeklyProgress').innerText = `${Math.min(100, (totalHours / 91) * 100).toFixed(0)}%`;
-            const currentSelectedDay = parseInt(document.getElementById('daySelect').value);
-            const completedToday = sprintData.dailyTotals[currentSelectedDay];
-            dayPieChart.data.datasets[0].data = [completedToday, Math.max(0, 24 - completedToday)];
-            dayPieChart.update();
-            weekLineChart.data.datasets[0].data = sprintData.dailyTotals;
-            weekLineChart.update();
-        }
+  downloadBtn.addEventListener('click', downloadBackup);
+  uploadTriggerBtn.addEventListener('click', () => uploadInput.click());
+  uploadInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    uploadBackup(file);
+    uploadInput.value = '';
+  });
+  nukeBtn.addEventListener('click', nukeEverything);
 
-        document.getElementById('daySelect').addEventListener('change', saveAndRender);
-        saveAndRender();
-    </script>
+  // ---------------- INIT ----------------
+  loadState();
+  viewDaySelect.value = String(state.viewDay || 1);
+  dayInput.value = '1';
+  renderAll();
+})();
+</script>
 </body>
 </html>
