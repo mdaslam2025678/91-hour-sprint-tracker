@@ -278,6 +278,35 @@
     display:flex; flex-direction:column; gap:10px;
     max-height: 460px; overflow-y:auto; padding-right: 4px;
   }
+  .day-group{
+    display:flex; flex-direction:column; gap:10px;
+    padding: 10px 10px 14px;
+    border: 1.5px solid var(--border-soft);
+    border-radius: var(--radius-md);
+    background: rgba(226,172,60,0.05);
+  }
+  .day-group + .day-group{ margin-top: 6px; }
+  .day-group-head{
+    display:flex; align-items:center; gap:10px;
+    padding: 2px 2px 6px;
+  }
+  .day-group-head .chip{
+    font-family:'Playfair Display', serif;
+    font-weight: 900; font-size: 13.5px; color: #fff;
+    background: linear-gradient(180deg, #d9a939, #8a6a1a);
+    padding: 5px 14px;
+    border-radius: 999px;
+    box-shadow: 0 3px 8px -2px rgba(138,106,26,0.6);
+    white-space:nowrap;
+  }
+  .day-group-head .rule-line{
+    flex:1; height: 1px;
+    background: repeating-linear-gradient(90deg, var(--gold) 0 6px, transparent 6px 12px);
+    opacity:0.6;
+  }
+  .day-group-head .day-sub{
+    font-size: 11.5px; font-weight: 700; color: var(--ink-faint); white-space:nowrap;
+  }
   .task-item{
     display:flex; align-items:center; gap:12px;
     background: var(--bg-grain);
@@ -759,10 +788,9 @@
 
   // ---------------- RENDER: TASK LIST ----------------
   function renderTaskList(){
-    const sorted = [...state.tasks].sort((a, b) => a.day - b.day);
     taskCountTag.textContent = `${state.tasks.length} task${state.tasks.length === 1 ? '' : 's'}`;
 
-    if(sorted.length === 0){
+    if(state.tasks.length === 0){
       taskListEl.innerHTML = `
         <li class="empty-state" style="list-style:none;">
           <div class="glyph">📜</div>
@@ -771,15 +799,38 @@
       return;
     }
 
-    taskListEl.innerHTML = sorted.map(t => `
-      <li class="task-item ${t.done ? 'done' : ''}" data-id="${t.id}">
-        <input type="checkbox" class="task-checkbox" ${t.done ? 'checked' : ''} aria-label="Mark task complete">
-        <span class="task-day">Day ${t.day}</span>
-        <span class="task-desc">${escapeHtml(t.desc)}</span>
-        <span class="task-hours">${t.hours}h</span>
-        <button class="task-del" aria-label="Delete task" title="Delete task">×</button>
-      </li>
-    `).join('');
+    // Group tasks by day so each day is its own visually boxed section —
+    // adjacent days never blur together in one continuous list.
+    const groups = {};
+    for(const t of state.tasks){
+      if(!groups[t.day]) groups[t.day] = [];
+      groups[t.day].push(t);
+    }
+    const activeDays = Object.keys(groups).map(Number).sort((a, b) => a - b);
+
+    taskListEl.innerHTML = activeDays.map(day => {
+      const tasks = groups[day];
+      const doneHrs = tasks.filter(t => t.done).reduce((s, t) => s + t.hours, 0);
+      const rows = tasks.map(t => `
+        <li class="task-item ${t.done ? 'done' : ''}" data-id="${t.id}">
+          <input type="checkbox" class="task-checkbox" ${t.done ? 'checked' : ''} aria-label="Mark task complete">
+          <span class="task-desc">${escapeHtml(t.desc)}</span>
+          <span class="task-hours">${t.hours}h</span>
+          <button class="task-del" aria-label="Delete task" title="Delete task">×</button>
+        </li>
+      `).join('');
+
+      return `
+        <li class="day-group" style="list-style:none;">
+          <div class="day-group-head">
+            <span class="chip">Day ${day}</span>
+            <span class="rule-line"></span>
+            <span class="day-sub">${doneHrs.toFixed(1)}h logged · ${tasks.length} task${tasks.length === 1 ? '' : 's'}</span>
+          </div>
+          ${rows}
+        </li>
+      `;
+    }).join('');
 
     taskListEl.querySelectorAll('.task-item').forEach(li => {
       const id = li.getAttribute('data-id');
