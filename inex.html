@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>91-Hour Sprint Dashboard</title>
+    <!-- Chart.js for data visualization -->
+    <script src="https://jsdelivr.net"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .container { grid-template-columns: 1fr; } }
+        .card { background: #1e293b; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        h1, h2 { margin-top: 0; color: #38bdf8; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        input, select, button { padding: 10px; border-radius: 6px; border: 1px solid #475569; background: #334155; color: white; font-size: 14px; }
+        button { background: #0284c7; cursor: pointer; border: none; font-weight: bold; }
+        button:hover { background: #0369a1; }
+        .task-item { display: flex; align-items: center; justify-content: space-between; padding: 10px; background: #334155; margin-bottom: 8px; border-radius: 6px; }
+        .task-item.completed { opacity: 0.6; text-decoration: line-through; border-left: 4px solid #10b981; }
+        .chart-box { max-height: 300px; margin-bottom: 20px; position: relative; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; text-align: center; }
+        .stat-card { background: #334155; padding: 15px; border-radius: 8px; font-size: 24px; font-weight: bold; }
+        .stat-card span { display: block; font-size: 12px; color: #94a3b8; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+    <div style="text-align: center; margin-bottom: 20px;">
+        <h1>🚀 91-Hour Sprint Open-Source Live Tracker</h1>
+        <p>Manually tick off your successes and watch your metrics update in real-time.</p>
+    </div>
+
+    <div class="container">
+        <!-- LEFT COLUMN: INPUTS & TASKS -->
+        <div class="card">
+            <h2>📝 Manual Logging</h2>
+            
+            <div class="input-group">
+                <select id="daySelect">
+                    <option value="0">Day 1 (Today)</option>
+                    <option value="1">Day 2</option>
+                    <option value="2">Day 3</option>
+                    <option value="3">Day 4</option>
+                    <option value="4">Day 5</option>
+                    <option value="5">Day 6</option>
+                    <option value="6">Day 7</option>
+                </select>
+                <input type="text" id="taskName" placeholder="Task description..." style="flex-grow: 1;">
+                <input type="number" id="taskHours" placeholder="Hours" style="width: 70px;" min="0" step="0.5">
+                <button onclick="addTask()">Add Task</button>
+            </div>
+
+            <h2>📋 Task Checklist</h2>
+            <div id="taskList">
+                <!-- JavaScript inserts tasks here -->
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: LIVE ANALYTICS -->
+        <div class="card">
+            <h2>📊 Live Analytics</h2>
+            
+            <div class="stats-grid">
+                <div class="stat-card"><span id="totalLogged">0 / 91</span>Total Hours Done</div>
+                <div class="stat-card"><span id="weeklyProgress">0%</span>Sprint Success</div>
+            </div>
+
+            <h3>🕒 Day's Balance (Work vs Rest)</h3>
+            <div class="chart-box">
+                <canvas id="dayPieChart"></canvas>
+            </div>
+
+            <h3>📈 7-Day Success Trend (Hours Per Day)</h3>
+            <div class="chart-box">
+                <canvas id="weekLineChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Open-Source Global Data Array (Saved to LocalStorage automatically)
+        let sprintData = JSON.parse(localStorage.getItem('sprintData')) || {
+            tasks: [],
+            dailyTotals: [0, 0, 0, 0, 0, 0, 0] // Tracked hours for Day 1 to Day 7
+        };
+
+        // Initialize Charts
+        const ctxPie = document.getElementById('dayPieChart').getContext('2d');
+        const dayPieChart = new Chart(ctxPie, {
+            type: 'pie',
+            data: {
+                labels: ['Completed Work', 'Remaining Day'],
+                datasets: [{
+                    data:,
+                    backgroundColor: ['#10b981', '#334155'],
+                    borderWidth: 0
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        const ctxLine = document.getElementById('weekLineChart').getContext('2d');
+        const weekLineChart = new Chart(ctxLine, {
+            type: 'line',
+            data: {
+                labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'],
+                datasets: [{
+                    label: 'Hours Worked',
+                    data: sprintData.dailyTotals,
+                    borderColor: '#38bdf8',
+                    backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { min: 0, max: 24, grid: { color: '#334155' } }, x: { grid: { color: '#334155' } } }
+            }
+        });
+
+        // Add a Task Manually
+        function addTask() {
+            const day = parseInt(document.getElementById('daySelect').value);
+            const name = document.getElementById('taskName').value.trim();
+            const hours = parseFloat(document.getElementById('taskHours').value);
+
+            if (!name || isNaN(hours) || hours <= 0) return alert('Please enter valid task details!');
+
+            sprintData.tasks.push({ id: Date.now(), day, name, hours, completed: false });
+            document.getElementById('taskName').value = '';
+            document.getElementById('taskHours').value = '';
+
+            saveAndRender();
+        }
+
+        // Toggle Manual Success Tick Mark
+        function toggleTask(id) {
+            const task = sprintData.tasks.find(t => t.id === id);
+            if (task) {
+                task.completed = !task.completed;
+                saveAndRender();
+            }
+        }
+
+        // Delete Task
+        function deleteTask(id) {
+            sprintData.tasks = sprintData.tasks.filter(t => t.id !== id);
+            saveAndRender();
+        }
+
+        // Core Calculation Engine
+        function saveAndRender() {
+            // Save to browser memory
+            localStorage.setItem('sprintData', JSON.stringify(sprintData));
+
+            // Reset Day Totals to calculate cleanly
+            sprintData.dailyTotals =;
+            let totalHours = 0;
+
+            const taskList = document.getElementById('taskList');
+            taskList.innerHTML = '';
+
+            // Process list and find successfully completed tasks
+            sprintData.tasks.forEach(task => {
+                if (task.completed) {
+                    sprintData.dailyTotals[task.day] += task.hours;
+                    totalHours += task.hours;
+                }
+
+                // Render list items dynamically
+                const item = document.createElement('div');
+                item.className = `task-item ${task.completed ? 'completed' : ''}`;
+                item.innerHTML = `
+                    <div>
+                        <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask(${task.id})">
+                        <strong style="color: #67e8f9;">[D${task.day + 1}]</strong> ${task.name} (${task.hours}h)
+                    </div>
+                    <button onclick="deleteTask(${task.id})" style="background: #ef4444; padding: 4px 8px; font-size: 11px;">X</button>
+                `;
+                taskList.appendChild(item);
+            });
+
+            // Update UI Numbers
+            document.getElementById('totalLogged').innerText = `${totalHours.toFixed(1)} / 91`;
+            document.getElementById('weeklyProgress').innerText = `${Math.min(100, (totalHours / 91) * 100).toFixed(0)}%`;
+
+            // Update Daily Pie Chart (Shows active selection drop down)
+            const currentSelectedDay = parseInt(document.getElementById('daySelect').value);
+            const completedToday = sprintData.dailyTotals[currentSelectedDay];
+            const remainingDay = Math.max(0, 24 - completedToday);
+            dayPieChart.data.datasets[0].data = [completedToday, remainingDay];
+            dayPieChart.update();
+
+            // Update 7-Day Trend Chart
+            weekLineChart.data.datasets[0].data = sprintData.dailyTotals;
+            weekLineChart.update();
+        }
+
+        // Update pie chart smoothly if drop down day selection changes
+        document.getElementById('daySelect').addEventListener('change', saveAndRender);
+
+        // Initial launch render
+        saveAndRender();
+    </script>
+</body>
+</html>
